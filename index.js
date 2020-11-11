@@ -73,7 +73,7 @@ app.post('/api/stores/:storeId/orders', (req, res) => {
     const orderNumber = Object.keys(store.orders).length + 1;
     console.log('Creating new order: ', orderNumber);
     const order = Order(req.params.storeId, orderNumber, new Date(), new Date(), ppc);
-    stores.orders[orderNumber] = order;
+    store.orders[orderNumber] = order;
     schedulePushNotification(orderNumber);
     res.send({ success: true, order });
 });
