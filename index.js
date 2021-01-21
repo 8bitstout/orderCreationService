@@ -31,23 +31,11 @@ const Order = (storeNumber, orderNumber, fulfillmentDate, fulfillmentTime, ppc) 
     ppc
 });
 
-const orders = {};
 const stores = {};
 
 for (let i = 1; i < 400; ++i) {
     stores[i] = { orders: {} };
 }
-
-const schedulePushNotification = (orderId) => {
-    console.log('Scheduling Push Notification for order:', orderId);
-    client.schedulePushNotification({ id: orderId, isValid: true, createAt: new Date() }, (err, response) => {
-        if (err) {
-            console.log('error: ', err);
-            return;
-        }
-        console.log(response);
-    });
-};
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -67,18 +55,24 @@ app.get('/api/stores/:storeId/orders/:orderId', (req, res) => {
     res.send(store.orders[req.params.id]);
 });
 
-app.post('/api/stores/:storeId/orders', (req, res) => {
-    const store = stores[req.params.storeId];
+app.post('/api/stores/:storeId/orders', async (req, res) => {
+    const storeId = req.params.storeId;
+    const store = stores[storeId];
     const { ppc } = req.body;
     const orderNumber = Object.keys(store.orders).length + 1;
     console.log('Creating new order: ', orderNumber);
     const order = Order(req.params.storeId, orderNumber, new Date(), new Date(), ppc);
-    store.orders[orderNumber] = order;
-    schedulePushNotification(orderNumber);
-    res.send({ success: true, order });
+    client.schedulePushNotification({ id: orderNumber, isValid: true, createAt: new Date() }, (err, response) => {
+        if (err) {
+            console.log('error: ', err);
+            res.send(err);
+            return;
+        }
+        stores[storeId]['orders'][orderNumber] = Order;
+        res.send({...response, order });
+    });
 });
 
 app.listen(port, () => {
     console.log(`Server listening at http://localhost:${port}`);
 });
-
