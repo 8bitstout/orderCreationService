@@ -31,10 +31,29 @@ const Order = (storeNumber, orderNumber, fulfillmentDate, fulfillmentTime, ppc) 
     ppc
 });
 
-const stores = {};
+class Store {
+    constructor(id) {
+        this.id = id;
+        this.orders = {};
+    }
+}
 
-for (let i = 1; i < 400; ++i) {
-    stores[i] = { orders: {} };
+class StoreMap {
+    constructor() {
+        this.stores = {};
+        this.length = 0;
+    }
+
+    addStore(id) {
+        this.stores[id] = new Store(id);
+        this.length++;
+    }
+}
+
+const storeMap = new StoreMap();
+
+for (let i = 1; i < 350; ++i) {
+    storeMap.addStore(i);
 }
 
 app.use(bodyParser.json());
@@ -45,19 +64,19 @@ app.get('/', (req, res) => {
 });
 
 app.get('/api/stores/:storeId/orders', (req, res)  => {
-    const store = stores[req.params.storeId];
+    const store = storeMap.stores[req.params.storeId];
     const ordersArray = Object.keys(store.orders).map(key => store.orders[key]);
     res.send(ordersArray);
 });
 
 app.get('/api/stores/:storeId/orders/:orderId', (req, res) => {
-    const store = stores[req.params.storeId];
+    const store = storeMap.stores[req.params.storeId];
     res.send(store.orders[req.params.id]);
 });
 
 app.post('/api/stores/:storeId/orders', async (req, res) => {
     const storeId = req.params.storeId;
-    const store = stores[storeId];
+    const store = storeMap.stores[storeId];
     const { ppc } = req.body;
     const orderNumber = Object.keys(store.orders).length + 1;
     console.log('Creating new order: ', orderNumber);
@@ -68,7 +87,7 @@ app.post('/api/stores/:storeId/orders', async (req, res) => {
             res.send(err);
             return;
         }
-        stores[storeId]['orders'][orderNumber] = Order;
+        storeMap.stores[storeId]['orders'][orderNumber] = order;
         res.send({...response, order });
     });
 });
